@@ -1,0 +1,95 @@
+# .gitignore for Tagline-infra (infra repo)
+# Ignore Python cache, editor junk, secrets, and local overrides
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Pyright, Ruff, Black, and other tool caches
+.pyright/
+.ruff_cache/
+.black/
+
+# Environments
+.env
+.env.*
+.envrc
+*.env
+*.envrc
+
+# Docker
+**/.docker/
+**/docker-compose.override.yml
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the infra repo but should not be committed
+secrets.env
+*.local
+*.bak
+*.swp
+*~
+
+# Ignore log files
+*.log
+
+# Ignore temp files
+*.tmp
+*.temp
+
+# Ignore node_modules just in case
+node_modules/
+
+# Ignore yarn lock just in case
+yarn.lock
+
+# End of file
