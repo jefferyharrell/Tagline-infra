@@ -10,6 +10,7 @@
 
 ## 2. Backend (MVP)
 
+- **ORM:** SQLAlchemy 2.x is the official ORM and database toolkit for all backend data access. All models, sessions, and DB operations must use SQLAlchemy. See `app/db/` for implementation details.
 - Store photo blobs (local filesystem).
 - Store metadata in DB via storage abstraction.
 - No in-app upload; add files to storage, then call `/rescan`.
