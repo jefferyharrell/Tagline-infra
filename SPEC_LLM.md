@@ -11,9 +11,22 @@
 ## 2. Backend (MVP)
 
 - **ORM:** SQLAlchemy 2.x is the official ORM and database toolkit for all backend data access. All models, sessions, and DB operations must use SQLAlchemy. See `app/db/` for implementation details.
-- Store photo blobs (local filesystem).
+- Store photo blobs using a selectable storage provider:
+    - **filesystem**: Persistent, local storage (default for production)
+    - **memory**: Ephemeral, in-memory storage (default for dev/test/CI)
+    - **null**: Accepts all ops, stores nothing, never fails (for CI/demo)
+    - **dropbox**: Planned
+    - **s3**: Planned
 - Store metadata in DB via storage abstraction.
 - No in-app upload; add files to storage, then call `/rescan`.
+
+    | Provider    | Persistence | Intended Use         | Status      |
+    |------------|-------------|----------------------|-------------|
+    | filesystem | Persistent  | Production, real data| MVP         |
+    | memory     | Ephemeral   | Dev, tests, CI       | MVP         |
+    | null       | None        | CI, demo, dry-run    | MVP         |
+    | dropbox    | Persistent  | Cloud, future        | Planned     |
+    | s3         | Persistent  | Cloud, future        | Planned     |
 
 ### Authentication
 

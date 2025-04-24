@@ -108,8 +108,20 @@ The app uses access tokens and refresh tokens for authentication between fronten
 
 ---
 
-- The MVP backend MUST use the local filesystem for storing photo blobs.
-- Dropbox and S3 integrations are planned for future releases (not MVP).
+- The MVP backend MUST support multiple storage providers for photo blobs:
+  - **filesystem**: Local persistent storage (MVP default for production, required for persistent data)
+  - **memory**: Ephemeral in-memory storage (default for local/dev/CI)
+  - **null**: Accepts all operations, stores nothing, never fails (ideal for CI/demo)
+  - **dropbox**: Planned for future releases
+  - **s3**: Planned for future releases
+
+| Provider    | Persistence | Intended Use         | Status      |
+|------------|-------------|----------------------|-------------|
+| filesystem | Persistent  | Production, real data| MVP         |
+| memory     | Ephemeral   | Dev, tests, CI       | MVP         |
+| null       | None        | CI, demo, dry-run    | MVP         |
+| dropbox    | Persistent  | Cloud, future        | Planned     |
+| s3         | Persistent  | Cloud, future        | Planned     |
 
 **Photo Uploads (MVP):**
 - File upload via the app is OUT OF SCOPE for MVP.
