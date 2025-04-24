@@ -24,6 +24,14 @@
 - All protected endpoints require `Authorization: Bearer <access_token>`.
 - Access tokens: short-lived (15–60 min), refresh tokens: long-lived, revocable.
 
+#### Token Storage Architecture (ADR 0004)
+- All authentication tokens (refresh tokens, revoked tokens, etc.) MUST be stored in Redis, not in the primary RDBMS.
+- In development, Redis MUST run as an in-memory service (via Docker Compose) with no persistence.
+- In production, Redis MUST be a persistent or hosted service (e.g., AWS ElastiCache, Upstash, etc.) with appropriate backup and security.
+- The backend MUST connect to Redis using a configurable `REDIS_URL` environment variable.
+- The RDBMS remains the canonical store for all application metadata (photo descriptions, etc.).
+- This approach is documented in ADR 0004 and is intended to ensure separation of concerns, performance, and operational safety.
+
 ### Storage Abstraction
 
 - Methods:

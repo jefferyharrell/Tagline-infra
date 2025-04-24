@@ -86,6 +86,14 @@ The app uses access tokens and refresh tokens for authentication between fronten
 - The frontend MUST prompt the user to log in again if a 401 is received.
 - The backend MUST support refresh token revocation (e.g., on logout or suspicious activity).
 
+##### Token Storage Architecture (ADR 0004)
+- All authentication tokens (refresh tokens, revoked tokens, etc.) MUST be stored in Redis, not in the primary RDBMS.
+- In development, Redis MUST run as an in-memory service (via Docker Compose) with no persistence.
+- In production, Redis MUST be a persistent or hosted service (e.g., AWS ElastiCache, Upstash, etc.) with appropriate backup and security.
+- The backend MUST connect to Redis using a configurable `REDIS_URL` environment variable.
+- The RDBMS remains the canonical store for all application metadata (photo descriptions, etc.).
+- This approach is documented in ADR 0004 and is intended to ensure separation of concerns, performance, and operational safety.
+
 ##### Security Notes
 - In production, all authentication and token exchange MUST occur over HTTPS. (HTTP is fine for development. )
 - Refresh tokens MUST be stored securely and never exposed to JavaScript (use HTTP-only cookies where possible).
