@@ -51,17 +51,18 @@
 ### Storage Abstraction
 
 - Methods:
-  - `list_photos(limit=100, offset=0) -> { photo_ids: [UUID], total: int }`
+  - `list_photos(limit=100, offset=0) -> { items: [Photo], total: int, limit: int, offset: int }`
   - `get_photo(photo_id: UUID) -> Photo`
   - `set_metadata(photo_id: UUID, metadata: dict) -> Photo`
 - Photo object:
   ```json
   {
-    "photo_id": "<uuid>",
+    "id": "<uuid>",
+    "object_key": "<string>",
     "metadata": {
       "description": "<string>"
     },
-    "last_modified": "<ISO 8601 timestamp>"
+    "last_modified": "<RFC3339 timestamp>"
   }
   ```
   The `metadata` field is a dictionary of typed key-value pairs. For MVP, only `description` is required, but this structure is explicitly designed for extensibility (e.g., tags, author, location, etc.). All metadata fields MUST be included in the `metadata` dictionary, not as top-level fields.
@@ -74,7 +75,7 @@
 |--------|---------------------------|--------------------------------|
 | POST   | /login                    | Authenticate, get tokens       |
 | POST   | /refresh                  | Get new access token           |
-| GET    | /photos                   | List photo IDs (paginated)     |
+| GET    | /photos                   | List photos (paginated, full objects) |
 | GET    | /photos/{id}              | Get photo + metadata           |
 | PATCH  | /photos/{id}/metadata     | Update metadata (description)  |
 | GET    | /photos/{id}/image        | Get image file                 |
@@ -137,6 +138,7 @@
 ## 8. Example Usage
 
 - Get photo: `GET /photos/{id}` → `{ "id": "...", "object_key": "...", "metadata": { "description": "A dog" }, "last_modified": "..." }`
+- List photos: `GET /photos` → `{ "total": 1, "limit": 100, "offset": 0, "items": [ { "id": "...", "object_key": "...", "metadata": { "description": "A dog" }, "last_modified": "..." } ] }`
 - Update description: `PATCH /photos/{id}/metadata` with `{ "metadata": { "description": "A dog" }, "last_modified": "..." }`
 - Error: `{ "detail": "Photo not found" }` (404)
 

@@ -33,12 +33,36 @@ The name "Tagline" is provisional and subject to change. Try to avoid using it i
 
 - Users can view photos (**blobs**) and edit associated metadata (see above for examples).
 - The backend is responsible for storing both the image data (**blobs**) and its metadata.
+- There is a single canonical Photo object, used for both single-photo and list responses, with the following fields:
+  - `id` (UUID): Unique photo ID
+  - `object_key` (string): Storage path/object key
+  - `metadata` (object): Dictionary of metadata fields (at minimum: description)
+  - `last_modified` (string): RFC3339/ISO8601 timestamp
 
 ---
 
 ## 2. Backend Specification
 
 ### 2.1 MVP Scope
+
+---
+
+#### Photo Endpoints
+
+- `GET /photos` returns `{ total, limit, offset, items: [Photo, ...] }` where each Photo is a fully described photo object (see above).
+- `GET /photos/{id}` returns a single Photo object.
+- All metadata fields (including description) are inside the `metadata` dictionary, not as top-level fields.
+- Example:
+  ```json
+  {
+    "id": "<uuid>",
+    "object_key": "<string>",
+    "metadata": {
+      "description": "A dog"
+    },
+    "last_modified": "<RFC3339 timestamp>"
+  }
+  ```
 
 ---
 
