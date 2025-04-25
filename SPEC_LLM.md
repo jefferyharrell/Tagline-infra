@@ -1,5 +1,8 @@
 # Project Specification
 
+**Version:** 1.0.1  
+**Last Updated:** 2025-04-25
+
 ## 1. Purpose
 
 - Web app for managing photos and metadata.
@@ -15,7 +18,7 @@
     - **filesystem**: Persistent, local storage (default for production)
     - **memory**: Ephemeral, in-memory storage (default for dev/test/CI)
     - **null**: Accepts all ops, stores nothing, never fails (for CI/demo)
-    - **dropbox**: Planned
+    - **dropbox**: Persistent, cloud storage (MVP for production cloud)
     - **s3**: Planned
 - Store metadata in DB via storage abstraction.
 - No in-app upload; add files to storage, then call `/rescan`.
@@ -25,7 +28,7 @@
     | filesystem | Persistent  | Production, real data| MVP         |
     | memory     | Ephemeral   | Dev, tests, CI       | MVP         |
     | null       | None        | CI, demo, dry-run    | MVP         |
-    | dropbox    | Persistent  | Cloud, future        | Planned     |
+    | dropbox    | Persistent  | Cloud, production    | MVP         |
     | s3         | Persistent  | Cloud, future        | Planned     |
 
 ### Authentication
@@ -55,10 +58,13 @@
   ```json
   {
     "photo_id": "<uuid>",
-    "description": "<string>",
+    "metadata": {
+      "description": "<string>"
+    },
     "last_modified": "<ISO 8601 timestamp>"
   }
   ```
+  The `metadata` field is a dictionary of typed key-value pairs. For MVP, only `description` is required, but this structure is explicitly designed for extensibility (e.g., tags, author, location, etc.). All metadata fields MUST be included in the `metadata` dictionary, not as top-level fields.
 - On metadata update, client sends `last_modified`; backend checks for conflicts (409 if mismatch).
 - **Fail-fast:** If the storage backend (e.g., filesystem, Dropbox, S3) is unavailable, the API MUST immediately return a 5xx error. No retries or queueing are required for MVP.
 
@@ -123,15 +129,15 @@
 |---------------|-----------|------------------------------|
 | id            | UUID      | Unique photo ID              |
 | object_key    | string    | Storage path/object key      |
-| description   | string    | User-supplied description    |
+| metadata      | object    | Dictionary of metadata fields (at minimum: description) |
 | last_modified | string    | RFC3339 timestamp            |
 
 ---
 
 ## 8. Example Usage
 
-- Get photo: `GET /photos/{id}` → `{ "id": "...", "object_key": "...", "description": "...", "last_modified": "..." }`
-- Update description: `PATCH /photos/{id}/metadata` with `{ "description": "...", "last_modified": "..." }`
+- Get photo: `GET /photos/{id}` → `{ "id": "...", "object_key": "...", "metadata": { "description": "A dog" }, "last_modified": "..." }`
+- Update description: `PATCH /photos/{id}/metadata` with `{ "metadata": { "description": "A dog" }, "last_modified": "..." }`
 - Error: `{ "detail": "Photo not found" }` (404)
 
 ---

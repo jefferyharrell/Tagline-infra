@@ -1,7 +1,7 @@
 # Project Specification
 
-**Version:** 1.0.0  
-**Last Updated:** 2025-04-22
+**Version:** 1.0.1  
+**Last Updated:** 2025-04-25
 
 > **Note:**
 > This document is a living specification. It will be revised and extended as the project evolves. All agents and contributors MUST refer to the latest version before implementing or reviewing any requirements.
@@ -112,7 +112,7 @@ The app uses access tokens and refresh tokens for authentication between fronten
   - **filesystem**: Local persistent storage (MVP default for production, required for persistent data)
   - **memory**: Ephemeral in-memory storage (default for local/dev/CI)
   - **null**: Accepts all operations, stores nothing, never fails (ideal for CI/demo)
-  - **dropbox**: Planned for future releases
+  - **dropbox**: Cloud storage (MVP requirement for production cloud deployments)
   - **s3**: Planned for future releases
 
 | Provider    | Persistence | Intended Use         | Status      |
@@ -120,7 +120,7 @@ The app uses access tokens and refresh tokens for authentication between fronten
 | filesystem | Persistent  | Production, real data| MVP         |
 | memory     | Ephemeral   | Dev, tests, CI       | MVP         |
 | null       | None        | CI, demo, dry-run    | MVP         |
-| dropbox    | Persistent  | Cloud, future        | Planned     |
+| dropbox    | Persistent  | Cloud, production    | MVP         |
 | s3         | Persistent  | Cloud, future        | Planned     |
 
 **Photo Uploads (MVP):**
@@ -146,11 +146,13 @@ A `Photo` object MUST contain at least the following fields:
 ```json
 {
   "photo_id": "<uuid>",
-  "description": "<string>",
+  "metadata": {
+    "description": "<string>"
+  },
   "last_modified": "<ISO 8601 timestamp>"
 }
 ```
-Future versions MAY add fields (e.g., tags, author, location).
+The `metadata` field is a dictionary of typed key-value pairs. For MVP, only `description` is required, but the structure is explicitly designed for future extensibility (e.g., tags, author, location, etc.). All metadata fields MUST be included in the `metadata` dictionary, not as top-level fields.
 
 #### Required Interface
 - `list_photos(limit: int = 100, offset: int = 0) -> dict`
@@ -172,7 +174,7 @@ Future versions MAY add fields (e.g., tags, author, location).
 - `set_metadata(photo_id: UUID, metadata: dict) -> Photo`
   - MUST update a photo's metadata fields.
   - `metadata` MUST be a JSON object.
-  - For MVP, the only required field is `{"description": "..."}`.
+  - For MVP, the only required field is `{"metadata": { "description": "..." }}`.
   - The interface MUST be extensible for future fields (e.g., tags, author).
   - The returned `Photo` object MUST reflect the updated metadata and the new `last_modified` timestamp.
 - When updating metadata, clients SHOULD send the last known `last_modified` value as part of the request body.
@@ -189,9 +191,10 @@ Future versions MAY add fields (e.g., tags, author, location).
   - Photo blobs MUST be stored in the local filesystem.
   - Metadata MUST be stored in the database via the storage abstraction.
 
-- **Dropbox Backend (future):**
+- **Dropbox Backend (MVP):**
   - Photo blobs MUST be stored in Dropbox.
   - Metadata MUST be stored in the database via the storage abstraction.
+  - Dropbox provider is a required MVP feature for cloud deployments. All Dropbox configuration and environment variables MUST be documented and tested.
 
 - **S3 Backend (future):**
   - Photo blobs MUST be stored in S3.
@@ -386,7 +389,7 @@ See [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) for definitions of **MUST**
 - The backend MUST expose a storage abstraction with the following interface:
   - `list_photos() -> list[UUID]`: MUST list all available photo object IDs
   - `get_photo(photo_id: UUID) -> Photo`: MUST retrieve a specific photo by ID, including metadata
-  - `set_metadata(photo_id: UUID, metadata: dict) -> Photo`: MUST update a photo's metadata fields. The `metadata` argument MUST be a JSON object. For MVP, this object will only contain `{"description": "..."}`, but the interface is designed for future extensibility (e.g., additional fields such as tags, author, etc.). The returned `Photo` object MUST reflect the updated metadata.
+  - `set_metadata(photo_id: UUID, metadata: dict) -> Photo`: MUST update a photo's metadata fields. The `metadata` argument MUST be a JSON object. For MVP, this object will only contain `{"metadata": { "description": "..." }}`, but the interface is designed for future extensibility (e.g., additional fields such as tags, author, etc.). The returned `Photo` object MUST reflect the updated metadata.
 - **Backend-specific behavior:**
   - **Filesystem backend:**
     - Blobs MUST be stored in local filesystem
@@ -405,8 +408,8 @@ See [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) for definitions of **MUST**
 | POST   | /login                      | Authenticate user and obtain access/refresh tokens | `{ "password": "hunter2" }`         | `{ "access_token": "<jwt>", "refresh_token": "<opaque>", "token_type": "bearer" }`           |
 | POST   | /refresh                    | Obtain a new access token using a refresh token | `{ "refresh_token": "<opaque>" }` | `{ "access_token": "<jwt>", "refresh_token": "<opaque>", "token_type": "bearer" }` |
 | GET    | /photos?limit=100&offset=0  | List photo IDs (paginated) |                                  | `{ "photo_ids": ["uuid1", "uuid2"], "total": 12345 }`      |
-| GET    | /photos/{id}                | Get photo data and all metadata fields |                                  | `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "object_key": "photos/foo.jpg", "description": "A dog" }`              |
-| PATCH  | /photos/{id}/metadata    | Update photo metadata (currently only `description`) | `{ "description": "Nice", "last_modified": "2025-04-22T12:00:00Z" }` | `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "description": "Nice", "last_modified": "2025-04-22T12:01:00Z"}` |
+| GET    | /photos/{id}                | Get photo data and all metadata fields |                                  | `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "object_key": "photos/foo.jpg", "metadata": { "description": "A dog" } }`              |
+| PATCH  | /photos/{id}/metadata    | Update photo metadata (currently only `description`) | `{ "metadata": { "description": "Nice" }, "last_modified": "2025-04-22T12:00:00Z" }` | `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "metadata": { "description": "Nice" }, "last_modified": "2025-04-22T12:01:00Z"}` |
 | GET    | /photos/{id}/image          | Get image file           |                                  | (binary image)                  |
 | POST   | /rescan                     | Discover and sync photos from storage (see note) |                                  | `{ "status": "ok" }`            |
 
@@ -422,7 +425,7 @@ See [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) for definitions of **MUST**
 |--------------|-----------|--------------------------------------------------------------------------------|
 | id           | UUID      | Unique photo ID (universally unique identifier, e.g., `6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b`) |
 | object_key   | string    | Storage path or object key (Dropbox path or S3 key)                             |
-| description  | string    | User-supplied description (stored in the database via the storage abstraction)   |
+| metadata     | object    | Dictionary of metadata fields (at minimum: description) |(stored in the database via the storage abstraction)   |
 | last_modified| string (RFC3339 timestamp) | Last modification time of photo metadata (set by backend)                |
 
 > **Note:** The GET `/photos/{id}` endpoint returns both photo data and all metadata fields as a single JSON object. Additional metadata fields MAY be supported in the future.
@@ -435,14 +438,14 @@ The `Photo` object represents an image record and its associated metadata. All A
 {
   "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b",
   "object_key": "photos/foo.jpg",
-  "description": "A dog",
+  "metadata": { "description": "A dog" },
   "last_modified": "2025-04-22T12:00:00Z"
 }
 ```
 
 - `id` (UUID string): Unique photo ID (universally unique identifier, e.g., `6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b`).
 - `object_key` (string): Storage path or object key (Dropbox path or S3 key).
-- `description` (string): User-supplied description (stored in the database via the storage abstraction).
+- `metadata` (object): Dictionary of key-value pairs describing the photo. For MVP, MUST include `description` (string), but is designed for extensibility (e.g., tags, author, etc.).
 
 > **Note:** Additional fields MAY be added to the `Photo` object in future, post-MVP versions. All clients and integrations MUST ignore unknown fields.
 
@@ -501,11 +504,11 @@ The `Photo` object represents an image record and its associated metadata. All A
 ## 15. Example Usage
 ### Get photo metadata
 Request: `GET /photos/6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b`
-Response: `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "object_key": "photos/foo.jpg", "description": "A dog" }`
+Response: `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "object_key": "photos/foo.jpg", "metadata": { "description": "A dog" } }`
 
 ### Update description
-Request: `PATCH /photos/6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b/metadata` with `{ "description": "A better description", "last_modified": "2025-04-22T12:00:00Z" }`
-Response: `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "description": "A better description", "last_modified": "2025-04-22T12:01:00Z" }`
+Request: `PATCH /photos/6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b/metadata` with `{ "metadata": { "description": "A better description" }, "last_modified": "2025-04-22T12:00:00Z" }`
+Response: `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "metadata": { "description": "A better description" }, "last_modified": "2025-04-22T12:01:00Z" }`
 
 ### Error response
 Response: `{ "detail": "Photo not found" }` (404)
