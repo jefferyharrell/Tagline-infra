@@ -14,7 +14,7 @@ services:
     container_name: tagline-backend-dev
     command: uvicorn tagline_backend_app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ../tagline-backend/app:/code/app
+      - ../tagline-backend:/code
       - tagline-db-data:/data
     ports:
       - "8000:8000"
