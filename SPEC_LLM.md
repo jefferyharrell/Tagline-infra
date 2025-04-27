@@ -85,7 +85,7 @@
 
 ## 3. Frontend (MVP)
 
-- Stack: React 19, Next.js 15.3, Tailwind CSS 4.1, shadcn/ui, TypeScript.
+- Stack: React 18, Next.js 15.3, Tailwind CSS 4.1, shadcn/ui, TypeScript.
 - Components:
   - Gallery/grid view (with pagination/infinite scroll).
   - Photo detail view.

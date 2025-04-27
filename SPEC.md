@@ -285,7 +285,7 @@ _This section describes requirements for the user interface, user experience, an
 
 ### 3.2 Frontend Tech Stack
 - The frontend MUST use:
-  - React 19
+  - React 18
   - Next.js 15.3
   - Tailwind CSS 4.1 for styling
   - shadcn/ui for UI components (or custom components matching their design principles)
