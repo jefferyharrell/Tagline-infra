@@ -35,10 +35,11 @@
 
 - Single password (env var: `BACKEND_PASSWORD`), no username.
 - Endpoints:
-  - `POST /login` `{ "password": "hunter2" }` → `{ "access_token", "refresh_token", "token_type" }`
-  - `POST /refresh` `{ "refresh_token" }` → `{ "access_token", ... }`
-- All protected endpoints require `Authorization: Bearer <access_token>`.
+  - `POST /login` `{ "password": "hunter2" }` → `{ "detail": "Login successful" }` and sets an HTTP-only cookie with the access token.
+  - `POST /refresh` `{ "refresh_token" }` → `{ "access_token", ... }` (may also set a new cookie)
+- All protected endpoints require the access token cookie (sent automatically by browsers/clients).
 - Access tokens: short-lived (15–60 min), refresh tokens: long-lived, revocable.
+- Clients should not expect tokens in the response body from `/login`; authentication is cookie-based.
 
 #### Token Storage Architecture (ADR 0004)
 - All authentication tokens (refresh tokens, revoked tokens, etc.) MUST be stored in Redis, not in the primary RDBMS.

@@ -72,17 +72,12 @@ The app uses access tokens and refresh tokens for authentication between fronten
 
 ##### Login Flow
 - The frontend MUST POST user credentials to the `/login` endpoint (e.g., `{ "password": "hunter2" }`).
+- On success, the backend returns `{ "detail": "Login successful" }` and sets an HTTP-only cookie containing the access token.
+- Clients MUST use the cookie for all subsequent authenticated requests; the access token is not returned in the response body.
 - The backend MUST verify credentials and, if valid, return:
-  - A short-lived access token (JWT) for API requests (default expiry: 15–60 minutes).
-  - A long-lived refresh token (opaque string or JWT) for obtaining new access tokens (default expiry: days to weeks).
-  - Example response:
-    ```json
-    {
-      "access_token": "<jwt>",
-      "refresh_token": "<opaque>",
-      "token_type": "bearer"
-    }
-    ```
+  - `{ "detail": "Login successful" }` and set an HTTP-only cookie with the access token.
+  - The access token is NOT included in the response body.
+  - Clients MUST use the cookie for authentication in subsequent requests.
 - If credentials are invalid, the backend MUST return HTTP 401 with an error response:
     ```json
     {
@@ -429,7 +424,7 @@ See [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) for definitions of **MUST**
 ## 9. API Endpoints
 | Method | Path                        | Purpose                  | Request Example                  | Response Example                |
 |--------|-----------------------------|--------------------------|----------------------------------|---------------------------------|
-| POST   | /login                      | Authenticate user and obtain access/refresh tokens | `{ "password": "hunter2" }`         | `{ "access_token": "<jwt>", "refresh_token": "<opaque>", "token_type": "bearer" }`           |
+| POST   | /login                      | Authenticate user and set access token cookie | `{ "password": "hunter2" }`         | `{ "detail": "Login successful" }` (sets HTTP-only cookie with access token)           |
 | POST   | /refresh                    | Obtain a new access token using a refresh token | `{ "refresh_token": "<opaque>" }` | `{ "access_token": "<jwt>", "refresh_token": "<opaque>", "token_type": "bearer" }` |
 | GET    | /photos?limit=100&offset=0  | List photo IDs (paginated) |                                  | `{ "photo_ids": ["uuid1", "uuid2"], "total": 12345 }`      |
 | GET    | /photos/{id}                | Get photo data and all metadata fields |                                  | `{ "id": "6d5e4b8a-2e3c-4f1d-9e7a-5c8b2e1f2a3b", "object_key": "photos/foo.jpg", "metadata": { "description": "A dog" } }`              |
@@ -439,7 +434,7 @@ See [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) for definitions of **MUST**
 
 > **Note:** The `/rescan` endpoint scans the backend storage for new photos and imports them into the app database. File upload via the app is not supported in MVP—add new photos directly to storage, then call `/rescan` to sync.
 
-- All protected endpoints (except `/login` and `/refresh`) MUST require `Authorization: Bearer <access_token>` in the header.
+- All protected endpoints (except `/login` and `/refresh`) MUST require the access token cookie for authentication. The `Authorization` header is NOT used for cookie-based auth.
 - Access tokens MUST expire after a short period (default: 15–60 minutes).
 - Refresh tokens MUST be securely stored and used only for obtaining new access tokens via `/refresh`.
 - The `/photos/{id}` and `/photos/{id}/metadata` endpoints MUST source and persist metadata via the storage abstraction (i.e., use the database).
