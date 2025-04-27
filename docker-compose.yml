@@ -1,0 +1,45 @@
+services:
+  redis:
+    image: redis:7
+    container_name: tagline-redis-dev
+    ports:
+      - "6379:6379"
+    # No persistence in dev; for prod, add a volume:
+    # volumes:
+    #   - tagline-redis-data:/data
+
+  backend:
+    build:
+      context: ../tagline-backend
+    container_name: tagline-backend-dev
+    command: uvicorn tagline_backend_app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ../tagline-backend/app:/code/app
+      - tagline-db-data:/data
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=sqlite:////data/tagline.db
+    env_file:
+      - ../tagline-backend/.env
+    depends_on:
+      - redis
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ../tagline-frontend:/app
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - ../tagline-frontend/.env
+    depends_on:
+      - backend
+
+volumes:
+  tagline-db-data:
